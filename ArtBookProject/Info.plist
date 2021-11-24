@@ -21,5 +21,7 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Seçilen fotoğrafı uygulamaya ekleyebilmeniz için izin vermeniz gerekiyor.</string>
 </dict>
 </plist>
