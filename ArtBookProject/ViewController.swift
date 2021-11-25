@@ -21,6 +21,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     var nameArry = [String]()
     var idArry = [UUID]()
+    var selectedPainting = ""
+    var selectedPaintingId : UUID?
     @IBOutlet weak var table: UITableView!
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,18 +31,20 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         table.dataSource = self
         // Do any additional setup after loading the view.
         navigationController?.navigationBar.topItem?.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.add, target: self, action: #selector(addFunc))
+        getData()
         
     }
     override func viewWillAppear(_ animated: Bool) {
-        nameArry.removeAll()
-        idArry.removeAll()
-        getData()
+        NotificationCenter.default.addObserver(self, selector: #selector(getData), name: NSNotification.Name.init(rawValue: "newData"), object: nil)
     }
     
     @objc func addFunc (){
+        selectedPainting = ""
         performSegue(withIdentifier: "todetailsVC", sender: nil)
     }
-    func getData(){
+    @objc func getData(){
+        nameArry.removeAll(keepingCapacity: false)
+        idArry.removeAll(keepingCapacity: false)
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         let context = appDelegate.persistentContainer.viewContext
         let fetchReq = NSFetchRequest<NSFetchRequestResult>(entityName: "Paintings")
@@ -63,6 +67,54 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         
     }
-
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "todetailsVC" {
+            let destinationVC = segue.destination as! DetailsVC
+            destinationVC.chosenPainting = selectedPainting
+            destinationVC.chosenPaintingId = selectedPaintingId
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        selectedPainting = nameArry[indexPath.row]
+        selectedPaintingId = idArry[indexPath.row]
+        performSegue(withIdentifier: "todetailsVC", sender: nil)
+    }
+    
+    func tableView(_ tableView : UITableView, commit EditingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath){
+        if EditingStyle == .delete {
+            let appDelegate = UIApplication.shared.delegate as! AppDelegate
+            let context = appDelegate.persistentContainer.viewContext
+            let idString = idArry[indexPath.row].uuidString
+            let fetchReq = NSFetchRequest<NSFetchRequestResult>(entityName: "Paintings")
+            fetchReq.predicate = NSPredicate(format: "id = %@", idString)
+            fetchReq.returnsObjectsAsFaults = false
+            
+            do {
+               let results = try context.fetch(fetchReq)
+                for i in results as! [NSManagedObject]{
+                    if let id = i.value(forKey: "id") as? UUID{
+                        if id == idArry[indexPath.row] {
+                            context.delete(i)
+                            nameArry.remove(at: indexPath.row)
+                            idArry.remove(at: indexPath.row)
+                            self.table.reloadData()
+                            do {
+                                try context.save()
+                            } catch  {
+                                print("Error")
+                            }
+                            break
+                        }
+                    }
+                }
+                
+            } catch  {
+                print("Error")
+            }
+        }
+        
+        
+    }
 }
 

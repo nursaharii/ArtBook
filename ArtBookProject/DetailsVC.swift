@@ -9,13 +9,59 @@ import UIKit
 import CoreData
 class DetailsVC: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate {
     
+    @IBOutlet weak var saveBtn: UIButton!
     let dateFormatter = DateFormatter()
     @IBOutlet weak var date: UIDatePicker!
     @IBOutlet weak var artist: UITextField!
     @IBOutlet weak var name: UITextField!
     @IBOutlet weak var img: UIImageView!
+    
+    var chosenPainting = ""
+    var chosenPaintingId : UUID?
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        if chosenPainting != "" {
+            saveBtn.isEnabled = true
+            
+            let appDelegate = UIApplication.shared.delegate as! AppDelegate
+            let context = appDelegate.persistentContainer.viewContext
+            
+            let fetchReq = NSFetchRequest<NSFetchRequestResult>(entityName: "Paintings")
+            let idString = chosenPaintingId?.uuidString
+            fetchReq.predicate = NSPredicate(format: "id = %@", idString!)
+            fetchReq.returnsObjectsAsFaults = false
+            
+            do {
+               let results = try context.fetch(fetchReq)
+                if results.count > 0 {
+                    for i in results as! [NSManagedObject] {
+                        if let isim = i.value(forKey: "name") as? String{
+                            name.text = isim
+                        }
+                        if let artst = i.value(forKey: "artist") as? String{
+                            artist.text = artst
+                        }
+                        if let imageData = i.value(forKey: "img") as? Data{
+                           let image = UIImage(data: imageData)
+                            img.image = image
+                        }
+                        if let dateData = i.value(forKey: "year") as? Date {
+                            date.date = dateData
+                        }
+                    }
+                }
+            } catch  {
+               print("Error")
+            }
+            
+        }
+        
+        else {
+            saveBtn.isEnabled = false
+        }
         let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
         view.addGestureRecognizer(gestureRecognizer)
         // Do any additional setup after loading the view.
@@ -32,6 +78,7 @@ class DetailsVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     }
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         img.image = info[.originalImage] as? UIImage
+        saveBtn.isEnabled = true
         self.dismiss(animated: true, completion: nil)
     }
     @objc func hideKeyboard(){
@@ -39,7 +86,6 @@ class DetailsVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
     }
     
     @IBAction func Save(_ sender: Any) {
-        dateFormatter.dateFormat = "dd / MM / yyyy"
         
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         let context = appDelegate.persistentContainer.viewContext
@@ -59,8 +105,10 @@ class DetailsVC: UIViewController,UIImagePickerControllerDelegate,UINavigationCo
         catch {
             print("Error")
         }
+        NotificationCenter.default.post(name: NSNotification.Name.init(rawValue: "newData"), object: nil)
+        self.navigationController?.popViewController(animated: true)
     }
     
-    self.navigationController?.popViewController(animated: true)
+    
     
 }

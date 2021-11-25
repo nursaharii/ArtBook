@@ -87,6 +87,7 @@
                         <outlet property="date" destination="MI4-i0-ilp" id="b1D-H8-dfj"/>
                         <outlet property="img" destination="jXj-wy-3XE" id="aS4-F0-cQh"/>
                         <outlet property="name" destination="jCK-Ns-r1k" id="Mkq-tX-yfl"/>
+                        <outlet property="saveBtn" destination="EUR-sl-vV5" id="jma-lJ-6CK"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="p6k-Hu-JrV" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
